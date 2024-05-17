@@ -23,6 +23,7 @@
         ul {
             list-style-type: none;
             display: flex;
+            flex-wrap: wrap;
             width: 100%;
             justify-content: center;
             background-color: #333;
@@ -32,7 +33,7 @@
         }
 
         li {
-            margin: 0 10px;
+            margin: 5px;
         }
 
         li a, .dropbtn {
@@ -82,18 +83,19 @@
 
         .canvas-container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 600px;
             margin: 0 auto;
             border: 2px solid #333;
             border-radius: 8px;
             overflow: hidden;
             background-color: white;
+            position: relative;
         }
 
         canvas {
             display: block;
             width: 100%;
-            height: calc(100vh - 220px); /* Adjust based on header and margins */
+            height: calc(100vh - 300px); /* Adjust based on header and margins */
         }
 
         #console {
@@ -102,8 +104,15 @@
             background-color: #e0e0e0;
             border-radius: 4px;
             width: 100%;
-            max-width: 1200px;
+            max-width: 600px;
             overflow: auto;
+        }
+
+        @media (max-width: 768px) {
+            ul {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -120,10 +129,10 @@
             <a href="#" id="drawButton">Draw</a>
         </li>
         <li>
-            <a href="#" onclick="typeMode = true">Type</a>
+            <a href="#" id="typeButton">Type</a>
         </li>
         <li>
-            <a href="#" onclick="eraseMode = true; drawMode = false">Erase</a>
+            <a href="#" id="eraseButton">Erase</a>
         </li>
         <li class="dropdown">
             <a href="#" class="dropbtn">Width</a>
@@ -181,11 +190,43 @@
         // Set up initial canvas state
         setup();
 
+        window.addEventListener('resize', setup);
+
         function setup() {
             canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+            canvas.height = window.innerHeight - document.querySelector('ul').offsetHeight - 40;
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawHeader();
+        }
+
+        function drawHeader() {
+            ctx.fillStyle = 'black';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('HYDERABAD SKIN HOSPITAL', canvas.width / 2, 30);
+            ctx.font = '16px Arial';
+            ctx.fillText('COSMETIC CENTRE', canvas.width / 2, 55);
+            ctx.font = '12px Arial';
+            ctx.fillText('(SKIN CLINIC, HAIR CLINIC, NAIL CLINIC, ALLERGY CLINIC', canvas.width / 2, 75);
+            ctx.fillText('COSMETOLOGY, SKIN SURGERY)', canvas.width / 2, 90);
+            ctx.fillText('Ph: 27563127', canvas.width / 2, 105);
+
+            ctx.textAlign = 'left';
+            ctx.fillText('Dr. L. SEETARAM REDDY', 10, 130);
+            ctx.fillText('M.B.B.S., D.D.D.V., F.S.A.S.M.S', 10, 145);
+            ctx.fillText('On Panel HMT, NGRI', 10, 160);
+            ctx.fillText('Timing: 2:00 PM to 4:00 PM, 5:30 PM to 7:00 PM', 10, 175);
+            ctx.fillText('THURSDAY & SUNDAY HOLIDAY', 10, 190);
+
+            ctx.fillText('Dr. L. GAUTAM REDDY', canvas.width / 2, 130);
+            ctx.fillText('M.B.B.S., D.D.D.V.F.S.A.S.M.S.F.A.G.E.', canvas.width / 2, 145);
+            ctx.fillText('Timing: 8:30 AM to 10:00 AM', canvas.width / 2, 160);
+            ctx.fillText('SUNDAY HOLIDAY', canvas.width / 2, 175);
+
+            ctx.textAlign = 'center';
+            ctx.fillText('SKIN SPECIALIST & COSMETOLOGIST', canvas.width / 2, 210);
+            ctx.fillText('BARKATPURA: Opposite Yuvathi Mandali, Function Hall, Hyderabad - 500 027', canvas.width / 2, 225);
         }
 
         function step() {
@@ -214,74 +255,44 @@
                 lastY = y;
                 ctx.beginPath();
                 ctx.strokeStyle = color;
-            }
-
-            if (typeMode === true) {
+                ctx.lineWidth = lineThickness;
+                ctx.moveTo(lastX, lastY);
+            } else if (typeMode === true) {
                 typeX = x;
-                typeY = y + 7;
-
-                const userText = prompt("Type Here");
-                if (userText !== null && userText !== "") {
+                typeY = y;
+                const text = prompt("Enter text:");
+                if (text) {
                     ctx.fillStyle = color;
-                    ctx.font = "18px Arial";
-                    ctx.fillText(userText, typeX, typeY);
+                    ctx.font = '16px Arial';
+                    ctx.fillText(text, typeX, typeY);
                 }
-
-                clearModes();
-                mouseIsDown = false;
-                drawMode = true;
-            }
-
-            if (eraseMode === true) {
-                ctx.beginPath();
-                ctx.arc(x, y, 40, 0, 2 * Math.PI, false);
-                ctx.fillStyle = 'white';
-                ctx.fill();
-                ctx.closePath();
             }
         }
 
-        function mouseUp(x, y) {
+        function mouseUp() {
             mouseIsDown = false;
-            lastX = 0;
-            lastY = 0;
-            ctx.closePath();
         }
 
         function mouseMove(x, y) {
-            if (mouseIsDown) {
-                if (drawMode === true) {
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = lineThickness;
-                    ctx.lineTo(x, y);
-                    ctx.stroke();
-                    lastX = x;
-                    lastY = y;
-                } else if (eraseMode === true) {
-                    ctx.beginPath();
-                    ctx.arc(x, y, 40, 0, 2 * Math.PI, false);
-                    ctx.fillStyle = 'white';
-                    ctx.fill();
-                    ctx.closePath();
-                }
+            if (mouseIsDown === true && drawMode === true) {
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                lastX = x;
+                lastY = y;
             }
-        }
-
-        function keyDown(event) {
-            if (event.keyCode === 84) { // 'T' key
-                clearModes();
-                typeMode = true;
-            }
-        }
-
-        function keyUp(event) {
-            // Add any necessary functionality here
         }
 
         function clearModes() {
             typeMode = false;
             drawMode = false;
             eraseMode = false;
+        }
+
+        function keyDown(event) {
+            if (event.key === "Escape") {
+                clearModes();
+                clearConsole();
+            }
         }
 
         function setLineThickness(thickness) {
@@ -298,9 +309,10 @@
 
         function eventPosition(event) {
             const rect = canvas.getBoundingClientRect();
+            const touch = event.touches ? event.touches[0] : event;
             return {
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top
+                x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+                y: (touch.clientY - rect.top) * (canvas.height / rect.height)
             };
         }
 
@@ -310,11 +322,27 @@
         }
 
         function handleMouseUp(event) {
-            const pos = eventPosition(event);
-            mouseUp(pos.x, pos.y);
+            mouseUp();
         }
 
         function handleMouseMove(event) {
+            const pos = eventPosition(event);
+            mouseMove(pos.x, pos.y);
+        }
+
+        function handleTouchStart(event) {
+            event.preventDefault();
+            const pos = eventPosition(event);
+            mouseDown(pos.x, pos.y);
+        }
+
+        function handleTouchEnd(event) {
+            event.preventDefault();
+            mouseUp();
+        }
+
+        function handleTouchMove(event) {
+            event.preventDefault();
             const pos = eventPosition(event);
             mouseMove(pos.x, pos.y);
         }
@@ -333,6 +361,16 @@
             drawMode = true;
         });
 
+        document.getElementById("typeButton").addEventListener("click", () => {
+            clearModes();
+            typeMode = true;
+        });
+
+        document.getElementById("eraseButton").addEventListener("click", () => {
+            clearModes();
+            eraseMode = true;
+        });
+
         document.getElementById("makeBlack").addEventListener("click", () => { color = 'black'; });
         document.getElementById("makeRed").addEventListener("click", () => { color = 'red'; });
         document.getElementById("makeOrange").addEventListener("click", () => { color = 'orange'; });
@@ -344,8 +382,10 @@
         canvas.addEventListener("mousedown", handleMouseDown);
         canvas.addEventListener("mouseup", handleMouseUp);
         canvas.addEventListener("mousemove", handleMouseMove);
+        canvas.addEventListener("touchstart", handleTouchStart);
+        canvas.addEventListener("touchend", handleTouchEnd);
+        canvas.addEventListener("touchmove", handleTouchMove);
         window.addEventListener("keydown", keyDown);
-        window.addEventListener("keyup", keyUp);
     </script>
 </body>
 </html>
