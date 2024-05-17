@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Prescription Writing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            display: flex;
+            width: 100%;
+            justify-content: center;
+            background-color: #333;
+            padding: 10px 0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin: 0 10px;
+        }
+
+        li a, .dropbtn {
+            color: white;
+            text-align: center;
+            padding: 10px 20px;
+            text-decoration: none;
+            display: block;
+            border-radius: 4px;
+        }
+
+        li a:hover, .dropdown:hover .dropbtn {
+            background-color: #4CAF50;
+        }
+
+        li.dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+            top: 100%;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 2px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: calc(100vh - 220px); /* Adjust based on header and margins */
+        }
+
+        #console {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 1200px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <ul class="horizontal">
+        <li class="dropdown">
+            <a href="#" class="dropbtn">File</a>
+            <div class="dropdown-content">
+                <a href="#" id="clearButton">Clear</a>
+                <a href="#" id="printButton">Print</a>
+            </div>
+        </li>
+        <li>
+            <a href="#" id="drawButton">Draw</a>
+        </li>
+        <li>
+            <a href="#" onclick="typeMode = true">Type</a>
+        </li>
+        <li>
+            <a href="#" onclick="eraseMode = true; drawMode = false">Erase</a>
+        </li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Width</a>
+            <div class="dropdown-content">
+                <a href="#" onclick="setLineThickness(1)">1</a>
+                <a href="#" onclick="setLineThickness(2)">2</a>
+                <a href="#" onclick="setLineThickness(3)">3</a>
+                <a href="#" onclick="setLineThickness(4)">4</a>
+                <a href="#" onclick="setLineThickness(5)">5</a>
+                <a href="#" onclick="setLineThickness(6)">6</a>
+                <a href="#" onclick="setLineThickness(7)">7</a>
+                <a href="#" onclick="setLineThickness(8)">8</a>
+            </div>
+        </li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Color</a>
+            <div class="dropdown-content">
+                <a href="#" id="makeBlack">Black</a>
+                <a href="#" id="makeRed">Red</a>
+                <a href="#" id="makeOrange">Orange</a>
+                <a href="#" id="makeYellow">Yellow</a>
+                <a href="#" id="makeGreen">Green</a>
+                <a href="#" id="makeBlue">Blue</a>
+                <a href="#" id="makePurple">Purple</a>
+            </div>
+        </li>
+    </ul>
+
+    <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+    <p id="console"></p>
+
+    <script>
+        // Declare all state variables here
+        const consoleOutput = document.getElementById("console");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let typeMode = false;
+        let drawMode = true;
+        let eraseMode = false;
+
+        let color = 'black';
+        let lineThickness = 2;
+
+        let lastX = 0;
+        let lastY = 0;
+
+        let typeX = 0;
+        let typeY = 0;
+
+        let mouseIsDown = false;
+
+        // Set up initial canvas state
+        setup();
+
+        function setup() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function step() {
+            clearConsole();
+
+            if (typeMode === true) {
+                print("Type mode (" + color + ") is active");
+                clearModes();
+                typeMode = true;
+            } else if (drawMode === true) {
+                print("Draw mode (" + color + ") is active");
+                clearModes();
+                drawMode = true;
+            } else if (eraseMode === true) {
+                print("Erase mode is active");
+                clearModes();
+                eraseMode = true;
+            }
+        }
+
+        function mouseDown(x, y) {
+            mouseIsDown = true;
+
+            if (drawMode === true) {
+                lastX = x;
+                lastY = y;
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+            }
+
+            if (typeMode === true) {
+                typeX = x;
+                typeY = y + 7;
+
+                const userText = prompt("Type Here");
+                if (userText !== null && userText !== "") {
+                    ctx.fillStyle = color;
+                    ctx.font = "18px Arial";
+                    ctx.fillText(userText, typeX, typeY);
+                }
+
+                clearModes();
+                mouseIsDown = false;
+                drawMode = true;
+            }
+
+            if (eraseMode === true) {
+                ctx.beginPath();
+                ctx.arc(x, y, 40, 0, 2 * Math.PI, false);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+
+        function mouseUp(x, y) {
+            mouseIsDown = false;
+            lastX = 0;
+            lastY = 0;
+            ctx.closePath();
+        }
+
+        function mouseMove(x, y) {
+            if (mouseIsDown) {
+                if (drawMode === true) {
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = lineThickness;
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    lastX = x;
+                    lastY = y;
+                } else if (eraseMode === true) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 40, 0, 2 * Math.PI, false);
+                    ctx.fillStyle = 'white';
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+        }
+
+        function keyDown(event) {
+            if (event.keyCode === 84) { // 'T' key
+                clearModes();
+                typeMode = true;
+            }
+        }
+
+        function keyUp(event) {
+            // Add any necessary functionality here
+        }
+
+        function clearModes() {
+            typeMode = false;
+            drawMode = false;
+            eraseMode = false;
+        }
+
+        function setLineThickness(thickness) {
+            lineThickness = thickness;
+        }
+
+        function print(text) {
+            consoleOutput.innerHTML += text + "<br>";
+        }
+
+        function clearConsole() {
+            consoleOutput.innerHTML = "";
+        }
+
+        function eventPosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            };
+        }
+
+        function handleMouseDown(event) {
+            const pos = eventPosition(event);
+            mouseDown(pos.x, pos.y);
+        }
+
+        function handleMouseUp(event) {
+            const pos = eventPosition(event);
+            mouseUp(pos.x, pos.y);
+        }
+
+        function handleMouseMove(event) {
+            const pos = eventPosition(event);
+            mouseMove(pos.x, pos.y);
+        }
+
+        document.getElementById("clearButton").addEventListener("click", () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            setup();
+        });
+
+        document.getElementById("printButton").addEventListener("click", () => {
+            window.print();
+        });
+
+        document.getElementById("drawButton").addEventListener("click", () => {
+            clearModes();
+            drawMode = true;
+        });
+
+        document.getElementById("makeBlack").addEventListener("click", () => { color = 'black'; });
+        document.getElementById("makeRed").addEventListener("click", () => { color = 'red'; });
+        document.getElementById("makeOrange").addEventListener("click", () => { color = 'orange'; });
+        document.getElementById("makeYellow").addEventListener("click", () => { color = 'yellow'; });
+        document.getElementById("makeGreen").addEventListener("click", () => { color = 'green'; });
+        document.getElementById("makeBlue").addEventListener("click", () => { color = 'blue'; });
+        document.getElementById("makePurple").addEventListener("click", () => { color = 'purple'; });
+
+        canvas.addEventListener("mousedown", handleMouseDown);
+        canvas.addEventListener("mouseup", handleMouseUp);
+        canvas.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("keydown", keyDown);
+        window.addEventListener("keyup", keyUp);
+    </script>
+</body>
+</html>
